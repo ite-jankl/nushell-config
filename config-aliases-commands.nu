@@ -17,6 +17,25 @@ def "gits fixes" [] { git log -i -E --grep="fix|bug|broken" --name-only --format
 def "gits aliveness" [] { git log --format='%ad' --date=format:'%Y-%m' | lines | str trim | where (is-not-empty) | uniq --count }
 def "gits firefighting" [] { git log --oneline --since="1 year ago" | find --ignore-case --regex 'revert|hotfix|emergency|rollback' }
 
+def "git tagarchive check" [] {
+  let remotes = git remote | lines
+  $remotes | each {|remote|
+    git tagarchive ls-remote-tags $remote
+  } | flatten --all | insert archived {|x| git tagarchive exists $x.remote $x.ref }
+}
+def "git tagarchive archived" [remote: string = 'origin'] {
+  { remote: $remote refs: (git tagarchive ls-remote $remote refs/archive/tags/**) }
+}
+def "git tagarchive ls-remote-tags" [remote: string = 'origin'] {
+  { remote: $remote refs: (git tagarchive ls-remote $remote refs/tags/**) }
+}
+def "git tagarchive ls-remote" [remote: string, ref_pattern: string] {
+  git ls-remote --refs --quiet $remote $ref_pattern | lines | parse "{sha1}\t{ref}" | sort-by ref --natural
+}
+def "git tagarchive exists" [remote: string, ref: string] {
+  git ls-remote --refs --quiet --exit-code $remote $ref | complete | get exit_code | match $in { 0 => true, 2 => false, _ => null }
+}
+
 # Shorts
 ## Native
 def e [...args] { ^($env.EDITOR) ...$args }
