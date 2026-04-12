@@ -10,6 +10,13 @@ def "ss start" [] { sudo sc start SunshineService }
 def "ss stop" [] { sudo sc stop SunshineService }
 alias ss = ss status
 
+def "gits most-changed-files" [] { git log --format=format: --name-only --since="1 year ago" | lines | str trim | where (is-not-empty) | uniq --count | sort-by count --reverse | take 20 }
+def "gits who" [] { git shortlog -sn --no-merges }
+def "gits who6m" [] { git shortlog -sn --no-merges --since="6 months ago" }
+def "gits fixes" [] { git log -i -E --grep="fix|bug|broken" --name-only --format='' | lines | str trim | where (is-not-empty) | uniq --count | sort-by count --reverse | take 20 }
+def "gits aliveness" [] { git log --format='%ad' --date=format:'%Y-%m' | lines | str trim | where (is-not-empty) | uniq --count }
+def "gits firefighting" [] { git log --oneline --since="1 year ago" | find --ignore-case --regex 'revert|hotfix|emergency|rollback' }
+
 # Shorts
 ## Native
 def e [...args] { ^($env.EDITOR) ...$args }
