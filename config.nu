@@ -3,6 +3,7 @@
 
 $env.config.show_banner = false
 $env.config.rm.always_trash = true
+$env.config.history.file_format = 'sqlite'
 # Change display_output to table so tables are not automatically expanded (`table -e`)
 $env.config.hooks.display_output = 'table'
 #$env.config.filesize.metric = true
