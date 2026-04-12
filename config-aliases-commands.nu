@@ -127,3 +127,23 @@ def "nu conf diff" [] {
   let current = $env.config | reject color_config keybindings menus | transpose key current
   $current | merge $defaults | where $it.current != $it.default
 }
+
+def "nuplugin upgrade" [nuVersion: string, myVersion: int = 0] {
+  let vBefore = open Cargo.toml | get dependencies.nu-plugin
+
+  let major = date now | format date "%y"
+  let parts = $nuVersion | split row '.'
+  let parts = if $parts.0 == '0' { $parts | skip 1 } else { $parts }
+  let minor = $parts | str join
+  let vAfter = $'($major).($minor).($myVersion)'
+
+  print "Attempting to upgrade ($vBefore) -> ($nuVersion) [($vAfter)]…"
+  cargo update --verbose;
+  git add Cargo.lock
+  git commit -m "misc: Upgrade dependencies" ;
+  open Cargo.toml | update dependencies.nu-plugin $nuVersion | update dependencies.nu-protocol.version $nuVersion | update package.version 26.1121.0 | save Cargo.toml --force;
+  cargo update --verbose;
+  git add Cargo.lock Cargo.toml
+  git commit -m $"misc: Upgrade Nushell ($vBefore) -> ($nuVersion)";
+  cargo check
+}
