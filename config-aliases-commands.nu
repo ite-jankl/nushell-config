@@ -91,7 +91,7 @@ def "dl section" [sectionname: string, url: string] {
 # ffmpeg
 alias ff = ffmpeg -hide_banner
 alias fp = ffprobe -hide_banner
-#old-alias ffweb = ff -i $1 -map_chapters -1 -map 0:v -map 0:a -c:v libsvtav1 -pix_fmt yuv420p10le -c:a libopus $2
+alias ffp = ffprobe -hide_banner
 # 10-bit x265 mkv
 def "ff 10" [filepath: path] {
     let target = ($filepath | path parse | update stem {|x| $"($x.stem)_10-bit-x265"} | update extension "mkv" | path join)
@@ -102,14 +102,24 @@ def "ff webm" [filepath: path] {
     let target = ($filepath | path parse | update extension "webm" | path join)
     ff -i $filepath -c:a libopus -c:v libsvtav1 -pix_fmt yuv420p10le $target
 }
-# alias for ff webm
-def "ff web" [filepath: path] {
-    ff webm $filepath
+# 10-bit av1 opus webm, first streams, no chapters
+def "ff webm0" [filepath: path] {
+    let target = ($filepath | path parse | update extension "webm" | path join)
+    ff -i $filepath -map_chapters -1 -map 0:v -map 0:a -c:a libopus -c:v libsvtav1 -pix_fmt yuv420p10le $target
 }
 # 8-bit x264 mp4
 def "ff mp4" [filepath: path] {
     let target = ($filepath | path parse | update stem {|x| $"($x.stem)_x264"} | update extension "mp4" | path join)
     ff -i $filepath -c:a aac -c:v libx264 -pix_fmt yuv420p $target
+}
+# Extract audio stream $anr and normalize audio with loudnorm filter, $ext is audio file type (like 'ac3' or 'opus')
+def "ff loudnorm" [filepath: path, anr: int, ext: string] {
+    let target = ($filepath | path parse | update stem {|x| $"($x.stem)_loudnorm"} | update extension $ext | path join)
+    ff -i $filepath -map $'0:a:($anr)' -filter:a loudnorm $target
+}
+def "ff loudnorm opus" [filepath: path, anr: int] {
+    let target = ($filepath | path parse | update stem {|x| $"($x.stem)_loudnorm"} | update extension 'opus' | path join)
+    ff -i $filepath -map $'0:a:($anr)' -filter:a loudnorm -ac 2 $target
 }
 
 def "nu conf diff" [] {
