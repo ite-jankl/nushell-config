@@ -166,3 +166,26 @@ def "nuplugin upgrade" [nuVersion: string, myVersion: int = 0] {
   git commit -m $"misc: Upgrade Nushell ($vBefore) -> ($nuVersion)";
   cargo check
 }
+
+# https://en.wikipedia.org/wiki/Byte_order_mark#Byte-order_marks_by_encoding
+const boms = [
+    { hex: "EFBBBF", label: "UTF-8" },
+    { hex: "FEFF", label: "UTF-16 (BE)" },
+    { hex: "FFFE", label: "UTF-16 (LE)" },
+    { hex: "0000FEFF", label: "UTF-32 (BE)" },
+    { hex: "FFFE0000", label: "UTF-32 (BE)" },
+    { hex: "2B2F76", label: "UTF-7" },
+    { hex: "F7644C", label: "UTF-1" },
+    { hex: "DD736673", label: "UTF-EBCDIC" },
+    { hex: "0EFEFF", label: "SCSU" },
+    { hex: "FBEE28", label: "BOCU-1" },
+    { hex: "84319533", label: "GB18030" },
+]
+let boms_lookup = $boms | sort-by { |it| $it.hex | str length } --reverse
+def bom [] {
+    let hex_signature = (open $in --raw | bytes at 0..4 | encode hex)
+    { 
+        file: $in,
+        bom: ($boms_lookup | where { |it| $hex_signature | str starts-with $it.hex } | first | default { label: 'None/Unknown' } | get label)
+    }
+}
